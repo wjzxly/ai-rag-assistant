@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文档问答 · RAG</title>
+<style>
+  :root {
+    --brand: #0066cc;
+    --brand-soft: #e8f1fb;
+    --ink: #1b1f24;
+    --ink-2: #5b6570;
+    --line: #e3e7ec;
+    --bg: #f6f8fa;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.7 -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 40px 20px 80px; }
+  header { margin-bottom: 28px; }
+  h1 { font-size: 26px; font-weight: 650; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); font-size: 14px; margin: 0; }
+  .badge {
+    display: inline-block; margin-top: 12px; padding: 3px 10px;
+    background: var(--brand-soft); color: var(--brand);
+    border-radius: 999px; font-size: 12px; font-weight: 550;
+  }
+  .card {
+    background: #fff; border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 22px;
+  }
+  .ask-box { display: flex; gap: 10px; align-items: flex-end; }
+  textarea {
+    flex: 1; resize: none; border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 14px; font: inherit; color: var(--ink); background: #fff;
+    outline: none; min-height: 52px; transition: border-color .15s;
+  }
+  textarea:focus { border-color: var(--brand); }
+  button {
+    border: 0; border-radius: 14px; padding: 14px 22px; font: inherit;
+    font-weight: 600; color: #fff; background: var(--brand); cursor: pointer;
+    transition: opacity .15s; white-space: nowrap;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.ghost {
+    background: #fff; color: var(--brand); border: 1px solid var(--line);
+    font-weight: 500; padding: 8px 14px; font-size: 13px;
+  }
+  .samples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .section-title {
+    font-size: 12px; font-weight: 650; color: var(--ink-2);
+    letter-spacing: .06em; text-transform: uppercase; margin: 0 0 12px;
+  }
+  #result { margin-top: 22px; display: none; }
+  .answer { white-space: pre-wrap; }
+  .answer .cite {
+    color: var(--brand); font-weight: 600; font-size: 12px;
+    background: var(--brand-soft); padding: 1px 5px; border-radius: 6px;
+    vertical-align: 1px; margin-left: 2px;
+  }
+  .meta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--ink-2);
+  }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .cites { margin-top: 18px; display: grid; gap: 10px; }
+  .cite-card {
+    border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px;
+    background: #fff;
+  }
+  .cite-head { display: flex; gap: 10px; align-items: baseline; font-size: 13px; }
+  .rank {
+    flex: none; width: 22px; height: 22px; border-radius: 7px;
+    background: var(--brand-soft); color: var(--brand);
+    display: grid; place-items: center; font-size: 12px; font-weight: 650;
+  }
+  .src { font-weight: 600; color: var(--ink); }
+  .loc { color: var(--ink-2); font-size: 12px; }
+  .preview { margin-top: 8px; color: var(--ink-2); font-size: 13.5px; line-height: 1.65; }
+  .warn {
+    margin-top: 14px; padding: 10px 14px; border-radius: 12px;
+    background: #fff8e6; color: #7a5b00; font-size: 13px;
+  }
+  .loading { color: var(--ink-2); font-size: 14px; }
+  footer { margin-top: 36px; color: var(--ink-2); font-size: 12.5px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>文档问答</h1>
+    <p class="sub">混合检索（BM25 + 向量，RRF 融合），每个结论都能点回原文行号。</p>
+    <span class="badge" id="badge">索引加载中…</span>
+  </header>
+
+  <div class="card">
+    <div class="ask-box">
+      <textarea id="q" rows="1" placeholder="例如：一线城市出差住宿标准是多少？"></textarea>
+      <button id="send">提问</button>
+    </div>
+    <div class="samples" id="samples"></div>
+  </div>
+
+  <div id="result">
+    <div class="card">
+      <p class="section-title">回答</p>
+      <div class="answer" id="answer"></div>
+      <div class="meta" id="meta"></div>
+      <div class="warn" id="warn" style="display:none"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <p class="section-title">引用来源</p>
+      <div class="cites" id="cites"></div>
+    </div>
+  </div>
+
+  <footer>检索结果来自本地文档，未经检索到的内容不会出现在回答里。</footer>
+</div>
+
+<script>
+const SAMPLES = [
+  "一线城市出差住宿标准是多少",
+  "出差回来多久之内要交报销单",
+  "供应商现场审核多少分才算通过",
+  "采购金额超过 20 万要谁批",
+  "GSK-318 的采购周期是多少天",
+  "什么叫三流不一致，能不能付款"
+];
+
+const $ = (id) => document.getElementById(id);
+
+function renderAnswer(text) {
+  // 把 [1] 这类引用标号渲染成小胶囊，其余保持纯文本换行
+  const safe = text
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return safe.replace(/\[(\d+)\]/g, '<span class="cite">[$1]</span>');
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch("/api/stats");
+    const d = await r.json();
+    $("badge").textContent = `${d.chunks} 个片段 · ${d.sources.length} 篇文档 · ${d.embedder}`;
+  } catch (e) {
+    $("badge").textContent = "索引不可用";
+  }
+}
+
+function buildSamples() {
+  const box = $("samples");
+  SAMPLES.forEach((s) => {
+    const b = document.createElement("button");
+    b.className = "ghost";
+    b.textContent = s;
+    b.onclick = () => { $("q").value = s; ask(); };
+    box.appendChild(b);
+  });
+}
+
+async function ask() {
+  const question = $("q").value.trim();
+  if (!question) return;
+  const btn = $("send");
+  btn.disabled = true;
+  $("result").style.display = "block";
+  $("answer").innerHTML = '<span class="loading">检索中…</span>';
+  $("cites").innerHTML = "";
+  $("meta").innerHTML = "";
+  $("warn").style.display = "none";
+
+  try {
+    const r = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, top_k: 5 })
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+
+    $("answer").innerHTML = renderAnswer(d.answer);
+    const modeText = d.mode === "llm" ? "模型生成" : "抽取式（未配置模型）";
+    $("meta").innerHTML =
+      `<span>模式 <b>${modeText}</b></span>` +
+      `<span>耗时 <b>${d.elapsed_ms} ms</b></span>` +
+      `<span>引用 <b>${d.citations.length}</b> 处</span>`;
+
+    if (d.warning) {
+      $("warn").style.display = "block";
+      $("warn").textContent = d.warning;
+    }
+
+    d.citations.forEach((c) => {
+      const el = document.createElement("div");
+      el.className = "cite-card";
+      el.innerHTML =
+        `<div class="cite-head">` +
+          `<span class="rank">${c.rank}</span>` +
+          `<span class="src">${c.source}</span>` +
+          `<span class="loc">${c.heading} · L${c.start_line}-${c.end_line}</span>` +
+        `</div>` +
+        `<div class="preview">${c.preview.replace(/</g, "&lt;")}</div>`;
+      $("cites").appendChild(el);
+    });
+  } catch (e) {
+    $("answer").innerHTML = '<span style="color:#b42318">请求失败：' + e.message + '</span>';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+$("send").onclick = ask;
+$("q").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !e.shiftKey)) {
+    e.preventDefault();
+    ask();
+  }
+});
+$("q").addEventListener("input", (e) => {
+  e.target.style.height = "auto";
+  e.target.style.height = Math.min(e.target.scrollHeight, 160) + "px";
+});
+buildSamples();
+loadStats();
+
+// 支持 ?q=xxx 直接提问：方便分享链接，也方便截图做 README 配图
+const preset = new URLSearchParams(location.search).get("q");
+if (preset) {
+  $("q").value = preset;
+  ask();
+}
+</script>
+</body>
+</html>
