@@ -1,0 +1,62 @@
+[
+  {
+    "question": "一线城市出差住宿每晚最多报销多少",
+    "sources": ["差旅报销制度.md"],
+    "keywords": ["600"]
+  },
+  {
+    "question": "出差回来多久之内要交报销单",
+    "sources": ["差旅报销制度.md"],
+    "keywords": ["15 个工作日"]
+  },
+  {
+    "question": "供应商现场审核多少分才算通过",
+    "sources": ["供应商准入规范.md"],
+    "keywords": ["70"]
+  },
+  {
+    "question": "A 类供应商的标准账期是多久",
+    "sources": ["供应商准入规范.md"],
+    "keywords": ["60 天"]
+  },
+  {
+    "question": "采购金额超过 20 万要谁批",
+    "sources": ["采购付款流程.md"],
+    "keywords": ["总经理"]
+  },
+  {
+    "question": "采购订单号的编号规则是什么",
+    "sources": ["采购付款流程.md"],
+    "keywords": ["PO-"]
+  },
+  {
+    "question": "资料齐全的付款申请几个工作日能付出去",
+    "sources": ["采购付款流程.md"],
+    "keywords": ["10 个工作日"]
+  },
+  {
+    "question": "什么叫三流不一致，能不能付款",
+    "sources": ["发票合规指引.md"],
+    "keywords": ["三流"]
+  },
+  {
+    "question": "电子发票重复打印怎么防止重复报销",
+    "sources": ["发票合规指引.md"],
+    "keywords": ["查重"]
+  },
+  {
+    "question": "GSK-318 这个物料的采购周期是多少天",
+    "sources": ["物料主数据.csv"],
+    "keywords": ["15"]
+  },
+  {
+    "question": "供应商连续两个季度考核不达标会怎样",
+    "sources": ["供应商准入规范.md"],
+    "keywords": ["淘汰"]
+  },
+  {
+    "question": "住宿发票抬头开成个人能不能报",
+    "sources": ["发票合规指引.md"],
+    "keywords": ["个人"]
+  }
+]
