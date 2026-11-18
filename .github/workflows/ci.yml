@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 设置 Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # 这一步很重要：核心链路声称零依赖，就必须在没有第三方包的环境里验证一遍。
+      # 如果哪天有人不小心 import 了 requests，这里会立刻红。
+      - name: 零依赖核心测试
+        run: python -m unittest discover -s tests -v
+
+      - name: 安装服务依赖
+        run: pip install -e ".[dev]"
+
+      - name: 全量测试
+        run: python -m pytest -q
+
+      - name: 检索基线评测
+        run: |
+          python -m rag.cli ingest
+          python -m rag.cli eval -v
