@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# 索引缓存：可由文档随时重建，不该进版本库
+.cache/
+*.json.gz
+
+# 测试与工具
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# 本地环境
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
