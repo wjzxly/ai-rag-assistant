@@ -1,5 +1,9 @@
 # 文档 RAG 问答服务
 
+[![CI](https://github.com/wjzxly/ai-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/wjzxly/ai-rag-assistant/actions/workflows/ci.yml)
+![python](https://img.shields.io/badge/python-3.10%2B-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
+
 > 把一堆企业内部文档变成"能回答、而且能指回原文第几行"的知识库。
 > 混合检索（BM25 + 向量，RRF 融合）+ 引用溯源，**核心检索链路零第三方依赖**。
 
